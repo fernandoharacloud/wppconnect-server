@@ -2,8 +2,8 @@ import { ServerOptions } from './types/ServerOptions';
 
 export default {
   secretKey: 'szZxPA3LC7iDkh7O9gUGe7cY2dpU4J',
-  host: 'https://wpp.cloud.fernandohara.com.br',
-  port: '443',
+  host: 'http://localhost',
+  port: '21465',
   deviceName: 'Virtú',
   poweredBy: 'Virtú-Server',
   startAllSession: true,
