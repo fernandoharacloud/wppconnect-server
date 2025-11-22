@@ -1,34 +1,67 @@
-FROM node:22.21.1-alpine AS base
+FROM node:22.21.1-slim AS base
 WORKDIR /usr/src/wpp-server
 ENV NODE_ENV=production PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  chromium \
+  ca-certificates \
+  fonts-liberation \
+  libasound2 \
+  libatk-bridge2.0-0 \
+  libgtk-3-0 \
+  libnss3 \
+  libx11-xcb1 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxrandr2 \
+  xdg-utils \
+  && rm -rf /var/lib/apt/lists/*
 COPY package.json ./
-RUN apk update && \
-    apk add --no-cache \
-    vips-dev \
-    fftw-dev \
-    gcc \
-    g++ \
-    make \
-    libc6-compat \
-    && rm -rf /var/cache/apk/*
-RUN yarn install --production --pure-lockfile && \
-    yarn add sharp --ignore-engines && \
-    yarn cache clean
+RUN corepack enable && yarn install --production --pure-lockfile && yarn cache clean
 
-FROM base AS build
+FROM node:22.21.1-slim AS build
 WORKDIR /usr/src/wpp-server
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-COPY package.json  ./
-RUN yarn install --production=false --pure-lockfile
-RUN yarn cache clean
+ENV NODE_ENV=development PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  chromium \
+  ca-certificates \
+  fonts-liberation \
+  libasound2 \
+  libatk-bridge2.0-0 \
+  libgtk-3-0 \
+  libnss3 \
+  libx11-xcb1 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxrandr2 \
+  xdg-utils \
+  && rm -rf /var/lib/apt/lists/*
+COPY package.json ./
+RUN corepack enable && yarn install --production=false --pure-lockfile && yarn cache clean
 COPY . .
 RUN yarn build
 
-FROM base
-WORKDIR /usr/src/wpp-server/
-RUN apk add --no-cache chromium
-RUN yarn cache clean
+FROM node:22.21.1-slim
+WORKDIR /usr/src/wpp-server
+ENV NODE_ENV=production PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  chromium \
+  ca-certificates \
+  fonts-liberation \
+  libasound2 \
+  libatk-bridge2.0-0 \
+  libgtk-3-0 \
+  libnss3 \
+  libx11-xcb1 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxrandr2 \
+  xdg-utils \
+  && rm -rf /var/lib/apt/lists/*
+COPY --from=build /usr/src/wpp-server/node_modules ./node_modules
 COPY . .
-COPY --from=build /usr/src/wpp-server/ /usr/src/wpp-server/
+COPY --from=build /usr/src/wpp-server/dist ./dist
 EXPOSE 21465
 ENTRYPOINT ["node", "dist/server.js"]
